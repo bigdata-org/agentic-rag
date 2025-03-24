@@ -3,6 +3,7 @@ from utils.pytract.core import pytract_rag
 from utils.litellm.core import llm
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import time
 from  dotenv import load_dotenv
 import logging
 from typing import List, Dict, Any, Optional
@@ -48,3 +49,8 @@ async def qa_pipeline(request: qaModel):
         raise e
     except Exception as e:
         raise e
+    
+    
+@app.get("/heartbeat")
+async def heartbeat():
+    return {"status": "healthy", "timestamp_ns": time.time_ns()}
