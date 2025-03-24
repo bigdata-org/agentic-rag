@@ -1,4 +1,12 @@
 fastapi
+uvicorn
+pydantic
 python-dotenv
 litellm
 requests
+nltk
+haystack-ai
+markdown-it-py
+mdit_plain
+pinecone_haystack
+scipy
