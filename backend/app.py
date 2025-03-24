@@ -39,9 +39,9 @@ async def qa_pipeline(request: qaModel):
         if invalid_prompt(prompt):
             raise handle_invalid_prompt()
         
-        # nvidia_rag = pytract_rag()
-        # response = nvidia_rag.run_nvidia_text_generation_pipeline([{"year":year, "qtr":qtr}], query=prompt, model=model)
-        response = {"markdown":"check your code you've commented the llm part of the application"}
+        nvidia_rag = pytract_rag()
+        response = nvidia_rag.run_nvidia_text_generation_pipeline([{"year":year, "qtr":qtr}], query=prompt, model=model)
+        # response = {"markdown":"check your code you've commented the llm part of the application"}
         if "markdown" in response:
             return {"markdown": response['markdown']}
         return handle_internal_server_error()
