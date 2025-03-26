@@ -14,7 +14,7 @@ import requests
 import nltk
 
 class pytract_rag:
-    def __init__(self, db='pinecone',chunking_strategy='word-400-overlap-40'):
+    def __init__(self, db='pinecone',chunking_strategy='sentence-5'):
         nltk.download('punkt')
         self.db=db.lower()
         self.cs=chunking_strategy
