@@ -10,3 +10,7 @@ markdown-it-py
 mdit_plain
 pinecone_haystack
 scipy
+langchain
+langchain-core
+langgraph
+snowflake-connector-python[pandas]
