@@ -13,13 +13,20 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from operator import add
-
+import logging
+# Set up logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 # Define AgentState
 class State(TypedDict):
     web: dict
     rag: dict
     sf: dict
+    available_agents: str
     llm_operations: Annotated[list[dict], add ]
     model_responses: Annotated[list[dict], add]
     web_search_result: str
@@ -29,7 +36,10 @@ class State(TypedDict):
 
     
 def sf_llm_call(state: State):
-    if int(state['rag']['search_params'][0]['year']) in [2024,2025]:
+    if int(state['rag']['search_params'][0]['year']) in [2024,2025] and state['available_agents'] in ['snowflake', 'combined']:
+        logger.info('======================================================================') 
+        logger.info('snwoflake agent invoked')
+        logger.info('======================================================================') 
         input_params = state['llm_operations'][-1]
         response = llm(**input_params)['answer']
         return {'model_responses':[{ 'answer': response}]}
@@ -46,22 +56,36 @@ def sf_search(state: State):
     return {"sf_search_result": chart_data}
 
 def web_search(state: State):
-    input_params = state['web']
-    context = web_api(**input_params)
-    return {"web_search_result": context}
+    if state['available_agents'] in ['web','combined']:
+        logger.info('======================================================================') 
+        logger.info('web agent invoked')
+        logger.info('======================================================================') 
+        input_params = state['web']
+        context = web_api(**input_params)
+        return {"web_search_result": context}
+    return {"web_search_result": "Web Agent was not invoked"}
 
 
 def rag_search(state:State) -> str:
-    input_params = state['rag']
-    nvidia_rag = pytract_rag()
-    context = nvidia_rag.run_nvidia_text_generation_pipeline(**input_params)
-    return {"rag_search_result": context}
+    if state['available_agents'] in ['rag','combined']:
+        logger.info('======================================================================') 
+        logger.info('rag agent invoked')
+        logger.info('======================================================================') 
+        input_params = state['rag']
+        nvidia_rag = pytract_rag()
+        context = nvidia_rag.run_nvidia_text_generation_pipeline(**input_params)
+        return {"rag_search_result": context}
+    return {"rag_search_result": "Rag Agent was not invoked"}
 
 def aggregator(state: State):
     model = state['llm_operations'][0]['model']
     prompt = state['rag']['query']
     rag_result = state['rag_search_result']
     web_result = state['web_search_result']
+    logger.info('======================================================================') 
+    logger.info('Final LLM Context Window')
+    logger.info(report_user_prompt.format(rag_result, web_result, prompt))
+    logger.info('======================================================================') 
     return {"llm_operations": [{"model":model,"user_prompt": report_user_prompt.format(rag_result, web_result, prompt), "system_prompt":ra_system_prompt}]}
 
 def final_report(state:State):
