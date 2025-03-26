@@ -3,7 +3,7 @@ import os
 import re
 
  
-def web_api(query, num_results=5, score_threshold=0.7):
+def web_api(query, num_results=5, score_threshold=0.1):
     url = "https://api.tavily.com/search"
  
     payload = {

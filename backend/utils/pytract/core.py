@@ -21,7 +21,7 @@ class pytract_rag:
         self.namespace = {'sentence-5':'nvidia_cs_1', 'word-400-overlap-40':'nvidia_cs_2', 'char-1200-overlap-120':'nvidia_cs_3'}.get(chunking_strategy)
         self.document_store = PineconeDocumentStore(index="nvidia-vectors", namespace=self.namespace, dimension=1536) 
                     
-    def run_nvidia_text_generation_pipeline(self, search_params, query):
+    def run_nvidia_text_generation_pipeline(self, search_params, query, top_k=5):
         master_documents=[]
         for param in search_params:
             year, qtr = param['year'], param['qtr']
@@ -32,7 +32,7 @@ class pytract_rag:
                                 ]
                         }
             text_embedder = OpenAITextEmbedder(model="text-embedding-3-small", dimensions=1536)
-            retriever = PineconeEmbeddingRetriever(document_store=self.document_store, filters=filters) 
+            retriever = PineconeEmbeddingRetriever(document_store=self.document_store, filters=filters, top_k=top_k) 
             rag_pipeline = Pipeline()
             rag_pipeline.add_component("text_embedder", text_embedder)
             rag_pipeline.add_component("retriever", retriever)

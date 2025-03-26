@@ -19,13 +19,16 @@ model_mapper = {
 available_models = list(model_mapper.keys())
 
 # Function to call the query API
-def rag(year, qtr, model, prompt):
+def rag(year, qtr, model, prompt, rag_top_k, web_top_k, web_threshold):
     url = f"{BACKEND_URL}/qa"
     data = {
         "year": year,
         "qtr": qtr.replace("Q", ""),  # Strip "Q" from quarter
         "model": model_mapper[model],
-        "prompt": prompt
+        "prompt": prompt,
+        "rag_top_k": rag_top_k,
+        "web_top_k": web_top_k,
+        "web_threshold": web_threshold
     }
     
     try:
@@ -54,6 +57,14 @@ with col2:
 with col3:
     model_choice = st.selectbox("Select available models:", available_models, index=available_models.index("gemini/gemini-1.5-pro"))
 
+with st.sidebar:
+    st.markdown("### Agent Configurations")  # Sidebar heading
+    st.write("")  # Adds one newline for spacing
+    rag_top_k = st.slider("RAG Top K Results", 1, 5, 5)
+    web_top_k = st.slider("WEB API Top K Results", 1, 5, 5)
+    web_threshold = st.slider("WEB API Score Threshold", 0.0, 1.0, 0.3, step=0.01)
+
+
 # User input for query
 query = st.text_area("Enter your query:", "", height=150)
 
@@ -61,12 +72,11 @@ query = st.text_area("Enter your query:", "", height=150)
 if st.button("Submit Query"):
     if query.strip():
         with st.spinner("Querying the backend..."):
-            result = rag(year, qtr, model_choice, query)
+            result = rag(year, qtr, model_choice, query, rag_top_k, web_top_k, web_threshold)
             st.session_state['chart_data'] = result['charts']
             st.session_state['markdown'] = result['markdown']
         if result and "markdown" in result:
-            st.subheader("Generated Response:")
-            st.write(result["markdown"])
+            pass
         elif result is None:
             st.error("Failed to retrieve data. Please check the backend connection.")
         else:
@@ -76,7 +86,7 @@ if st.button("Submit Query"):
 
 if 'markdown' in st.session_state and st.session_state['markdown']:
     st.subheader("Generated Response:")
-    st.write(result["markdown"])
+    st.write(st.session_state["markdown"])
 
 if 'chart_data' in st.session_state and st.session_state['chart_data']:
     st.subheader("Snowflake powered charts:")
