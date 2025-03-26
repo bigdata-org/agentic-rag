@@ -1,5 +1,6 @@
 from utils.helper import *
 from utils.pytract.core import pytract_rag
+from utils.langgraph.agent import invoke_agent, agent_builder
 from utils.litellm.core import llm
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -39,12 +40,18 @@ async def qa_pipeline(request: qaModel):
         if invalid_prompt(prompt):
             raise handle_invalid_prompt()
         
-        nvidia_rag = pytract_rag()
-        response = nvidia_rag.run_nvidia_text_generation_pipeline([{"year":year, "qtr":qtr}], query=prompt, model=model)
+        initial_state = {
+        "llm_operations":[{"model": model, "user_prompt": prompt, "system_prompt":sf_system_prompt, "is_json": True}],
+        "sf": {"query": prompt},
+        "web" :{"query": prompt, "num_results": 5, "score_threshold": 0.7},
+        "rag" : {"search_params": [{"year": year, "qtr": qtr}], "query": prompt}
+    }
+        agent = agent_builder()
+        agent_response = invoke_agent(agent, initial_state)
+        
         # response = {"markdown":"check your code you've commented the llm part of the application"}
-        if "markdown" in response:
-            return {"markdown": response['markdown']}
-        return handle_internal_server_error()
+        response = {"markdown": agent_response[0], "charts": agent_response[1]}
+        return response
     except HTTPException as e:
         raise e
     except Exception as e:
