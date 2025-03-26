@@ -24,6 +24,9 @@ class qaModel(BaseModel):
     qtr: str
     model: str
     prompt: str
+    rag_top_k: int
+    web_top_k: int
+    web_threshold: float
     
 @app.post('/qa') 
 async def qa_pipeline(request: qaModel):
@@ -32,8 +35,11 @@ async def qa_pipeline(request: qaModel):
         qtr = request.qtr
         model = request.model
         prompt = request.prompt
+        rag_top_k = request.rag_top_k
+        web_top_k = request.web_top_k
+        web_threshold = request.web_threshold
         
-        logger.info(f"Year: {year}, Quarter: {qtr}, Model: {model},Prompt: {prompt}")
+        logger.info(f"Year: {year}, Quarter: {qtr}, Model: {model},Prompt: {prompt}, rag_top_k : {rag_top_k}, web_top_k, {web_top_k}, web_threshold: {web_threshold}")
         
         if invalid_model(model):
             raise handle_invalid_model()
@@ -43,8 +49,8 @@ async def qa_pipeline(request: qaModel):
         initial_state = {
         "llm_operations":[{"model": model, "user_prompt": prompt, "system_prompt":sf_system_prompt, "is_json": True}],
         "sf": {"query": prompt},
-        "web" :{"query": prompt, "num_results": 5, "score_threshold": 0.7},
-        "rag" : {"search_params": [{"year": year, "qtr": qtr}], "query": prompt}
+        "web" :{"query": prompt, "num_results": web_top_k, "score_threshold": web_threshold},
+        "rag" : {"search_params": [{"year": year, "qtr": qtr}], "query": prompt, "top_k": rag_top_k}
     }
         agent = agent_builder()
         agent_response = invoke_agent(agent, initial_state)
