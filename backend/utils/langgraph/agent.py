@@ -6,7 +6,7 @@ from utils.pytract.core import pytract_rag
 from utils.tavily.core import web_api
 from utils.snowflake.core import chart_api
 from utils.litellm.core import llm
-from utils.helper import sf_system_prompt, ra_system_prompt
+from utils.helper import ra_system_prompt, report_user_prompt
 from langchain.tools import tool
 from typing import Annotated
 from typing_extensions import TypedDict
@@ -59,15 +59,15 @@ def rag_search(state:State) -> str:
 
 def aggregator(state: State):
     model = state['llm_operations'][0]['model']
+    prompt = state['rag']['query']
     rag_result = state['rag_search_result']
     web_result = state['web_search_result']
-    return {"llm_operations": [{"model":model,"user_prompt": f"rag result:\n{rag_result}\n--------\nweb result:\n{web_result}", "system_prompt":ra_system_prompt}]}
+    return {"llm_operations": [{"model":model,"user_prompt": report_user_prompt.format(rag_result, web_result, prompt), "system_prompt":ra_system_prompt}]}
 
 def final_report(state:State):
     """Combine the results in to generate a research report"""  
     print('calling final report') 
     report_markdown = state['model_responses'][-1]['answer']
-    # print(state)
     chart_data = state['sf_search_result']
     return {'combined_output': (report_markdown, chart_data)}
 
@@ -95,11 +95,5 @@ def agent_builder():
     return parallel_workflow
 
 def invoke_agent(agent, initial_state):
-#     initial_state = {
-#     "llm_operations":[{"model":"gemini/gemini-1.5-pro", "user_prompt":"how did nvidia revenue surge from 2024 to 2025", "system_prompt":sf_system_prompt, "is_json": True}],
-#     "sf": {"query": "how did nvidia revenue surge from 2024 to 2025"},
-#     "web" :{"query": "Who is batman", "num_results": 5, "score_threshold": 0.7},
-#     "rag" : {"search_params": [{"year":"2025", "qtr":"1"}], "query": "what is nvidia's risks"}
-# }
     output_state = agent.invoke(initial_state)
     return output_state.get('combined_output', None)

@@ -106,3 +106,19 @@ The output should be structured into the following sections:
 ## 4. Build the Report
 Once the research output is gathered, format the results into a readable report with sections such as Introduction, Research Steps, Main Body, Conclusion, and Sources. Ensure all images are cited and properly incorporated into the "Main Body" and "Sources" sections.
 """
+
+report_user_prompt = """
+You have been provided with research data from two sources:
+
+### RAG (Retrieval-Augmented Generation) Results:
+{}
+
+### Web Search Results:
+{}
+
+Using the above information, generate a research report that answers the following question:
+
+**User's Question:** {}
+
+Ensure the response is comprehensive, well-structured, and aligns with the research framework outlined in the system prompt.
+"""
