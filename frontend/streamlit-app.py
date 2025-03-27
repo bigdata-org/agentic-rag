@@ -2,10 +2,11 @@ import streamlit as st
 import pandas as pd
 import requests
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Backend FastAPI URL (Ensure this is accessible from Streamlit Cloud)
 # BACKEND_URL = "https://agentic-rag-451496260635.us-central1.run.app"  # Adjust as needed
-BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = "http://localhost:8081"
 
 model_mapper = {
     "openai/gpt-4o": "gpt-4o-2024-08-06",
@@ -92,23 +93,47 @@ if 'markdown' in st.session_state and st.session_state['markdown']:
 if 'chart_data' in st.session_state and st.session_state['chart_data']:
     st.subheader("Snowflake powered charts:")
     data = st.session_state['chart_data']
+    
     for idx, chart_data in enumerate(data):
         df = pd.DataFrame(chart_data)
         # Extract metric names dynamically (excluding 'year' and 'qtr')
         metrics = list(df.columns)
         metrics.remove('year')
         metrics.remove('qtr')
-
+        
         # Create a new column for x-axis labels
         df['Year-Qtr'] = df.apply(lambda row: f"{int(row['year'])} Q{int(row['qtr'])}", axis=1)
-
-        # Plot all metrics (except 'year' and 'qtr')
-        for metric in metrics:
-            fig, ax = plt.subplots()
-            ax.bar(df['Year-Qtr'], df[metric], color='skyblue')
-            ax.set_xlabel("Year - Quarter")
-            ax.set_ylabel(metric)
-            ax.set_title(f"{metric} over Time")
-            plt.xticks(rotation=45)
-
-            st.pyplot(fig)
+        
+        # Create numerical x-axis for plotting
+        x = np.arange(len(df))
+        
+        # Add tabs for different chart types
+        tab1, tab2 = st.tabs(["Bar Charts", "Line Charts"])
+        
+        with tab1:
+            st.subheader("Bar Charts")
+            for metric in metrics:
+                fig, ax = plt.subplots()
+                # Convert to numpy arrays before plotting
+                ax.bar(x, df[metric].to_numpy(), color='skyblue')
+                ax.set_xlabel("Year - Quarter")
+                ax.set_ylabel(metric)
+                ax.set_title(f"{metric} over Time")
+                ax.set_xticks(x)
+                ax.set_xticklabels(df['Year-Qtr'].to_numpy(), rotation=45)
+                st.pyplot(fig)
+        
+        with tab2:
+            st.subheader("Line Charts")
+            for metric in metrics:
+                fig, ax = plt.subplots()
+                # Convert to numpy arrays before plotting
+                ax.plot(x, df[metric].to_numpy(), marker='o', linestyle='-', color='green')
+                ax.set_xlabel("Year - Quarter")
+                ax.set_ylabel(metric)
+                ax.set_title(f"{metric} Trend over Time")
+                ax.set_xticks(x)
+                ax.set_xticklabels(df['Year-Qtr'].to_numpy(), rotation=45)
+                plt.grid(True, linestyle='--', alpha=0.7)
+                st.pyplot(fig)
+        

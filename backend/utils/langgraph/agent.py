@@ -36,7 +36,7 @@ class State(TypedDict):
 
     
 def sf_llm_call(state: State):
-    if int(state['rag']['search_params'][0]['year']) in [2024,2025] and state['available_agents'] in ['snowflake', 'combined']:
+    if state['available_agents'] in ['snowflake', 'combined']:
         logger.info('======================================================================') 
         logger.info('snwoflake agent invoked')
         logger.info('======================================================================') 
