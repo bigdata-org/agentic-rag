@@ -4,8 +4,8 @@ import requests
 import matplotlib.pyplot as plt
 
 # Backend FastAPI URL (Ensure this is accessible from Streamlit Cloud)
-# BACKEND_URL = "https://agentic-rag-451496260635.us-central1.run.app"  # Adjust as needed
-BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = "https://agentic-rag-451496260635.us-central1.run.app"  # Adjust as needed
+# BACKEND_URL = "http://localhost:8000"
 
 model_mapper = {
     "openai/gpt-4o": "gpt-4o-2024-08-06",
