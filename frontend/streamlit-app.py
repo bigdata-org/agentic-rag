@@ -73,9 +73,12 @@ query = st.text_area("Enter your query:", "", height=150)
 if st.button("Submit Query"):
     if query.strip():
         with st.spinner("Querying the backend..."):
-            result = rag(year, qtr, model_choice, query, rag_top_k, web_top_k, web_threshold, selected_agent)
-            st.session_state['chart_data'] = result['charts']
-            st.session_state['markdown'] = result['markdown']
+            result = rag(year, qtr, model_choice, query, rag_top_k, web_top_k, web_threshold, selected_agent) 
+            if result:
+                st.session_state['chart_data'] = result['charts']
+                st.session_state['markdown'] = result['markdown']
+                st.session_state['year'] = year
+                st.session_state['qtr'] = qtr.replace("Q", "")
         if result and "markdown" in result:
             pass
         elif result is None:
@@ -92,23 +95,33 @@ if 'markdown' in st.session_state and st.session_state['markdown']:
 if 'chart_data' in st.session_state and st.session_state['chart_data']:
     st.subheader("Snowflake powered charts:")
     data = st.session_state['chart_data']
+    
     for idx, chart_data in enumerate(data):
         df = pd.DataFrame(chart_data)
-        # Extract metric names dynamically (excluding 'year' and 'qtr')
-        metrics = list(df.columns)
-        metrics.remove('year')
-        metrics.remove('qtr')
+
+        # Extract the single metric dynamically (excluding 'year' and 'qtr')
+        metric = [col for col in df.columns if col not in ['year', 'qtr']][0]  # Only one metric expected
 
         # Create a new column for x-axis labels
-        df['Year-Qtr'] = df.apply(lambda row: f"{int(row['year'])} Q{int(row['qtr'])}", axis=1)
+        df['Year-Qtr'] = df.apply(lambda row: f"{int(row['year'])} - Q{int(row['qtr'])}", axis=1)
 
-        # Plot all metrics (except 'year' and 'qtr')
-        for metric in metrics:
-            fig, ax = plt.subplots()
-            ax.bar(df['Year-Qtr'], df[metric], color='skyblue')
-            ax.set_xlabel("Year - Quarter")
-            ax.set_ylabel(metric)
-            ax.set_title(f"{metric} over Time")
-            plt.xticks(rotation=45)
-
-            st.pyplot(fig)
+        highlight_x = f"{st.session_state['year']} - Q{st.session_state['qtr']}"  # The quarter to highlight
+        st.write(highlight_x)
+        # Create figure and axis
+        fig, ax = plt.subplots(figsize=(12, 6))
+        # Bar colors (highlight specific quarter)
+        colors = ['#3498db' if x != highlight_x else '#e74c3c' for x in df['Year-Qtr']]
+        # Plot bars
+        ax.bar(df['Year-Qtr'], df[metric], color=colors, edgecolor='black', alpha=0.7, label='Bar')
+        # Overlay line plot
+        ax.plot(df['Year-Qtr'], df[metric], marker='o', linestyle='-', linewidth=2, markersize=6, color='black', label='Trend Line')
+        # Labels and title
+        ax.set_xlabel("Year - Quarter", fontsize=12)
+        ax.set_ylabel(metric, fontsize=12)
+        ax.set_title(f"{metric} over Time", fontsize=14, fontweight='bold')
+        # Rotate x-axis labels for clarity
+        plt.xticks(rotation=45)
+        # Add legend
+        ax.legend()
+        # Display in Streamlit
+        st.pyplot(fig)
